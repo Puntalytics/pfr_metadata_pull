@@ -1,5 +1,24 @@
 # pfr_metadata_pull
 
+All of your favorite pfr_metadata_pull code, now in package form!  Usage is a simple as:  
+  
+1. Clone this repo  
+2. Make sure your local copy of the repo lives in a directory that's in your PYTHONPATH  
+3. Open up python in your manner of choice and type the following:  
+```python
+import pfr_metadata_pull as meta
+
+meta.scrape_links(start_year, end_year, output_path)  # creates input_file1
+meta.pull_data_from_links(input_file1, output_path)  # creates input_file2
+meta.fix_weeks(input_file2, output_path)  # creates input_file3
+meta.format_data(input_file3, output_path)  # creates your final file of interest, with metadata for games in the desired range
+```
+The scrape_links, pull_data_from_links, and format_data methods correlate with the functions of the scripts referenced below, while fix_weeks is a stopgap bug fix that I couldn't quite figure out.
+
+These changes made by [Dennis Brookner](https://github.com/dennisbrookner); direct concerns to me, or to [Puntalytics](https://twitter.com/ThePuntRunts) on twitter.
+
+### Original README from greerre
+
 This repo contains the set of scripts used to create the dataset referenced here:
 
 https://twitter.com/greerreNFL/status/1146519422527389696
