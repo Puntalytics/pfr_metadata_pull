@@ -12,10 +12,10 @@ from bs4 import BeautifulSoup
 import pandas as pd
 import numpy
 
-data_folder = 'file path to folder where all data will be held...no trailing slash'
+data_folder = '~/github/pfr_metadata_pull/data'
 
-season_start = 1960
-season_end = 2018
+season_start = 2015    #1960
+season_end = 2017
 current_season = season_start
 
 url_base = 'https://www.pro-football-reference.com'
@@ -66,7 +66,7 @@ while current_season <= season_end:
                 }
                 box_info['Season'] = int(current_season)
                 box_info['Week'] = week['Week Name']
-                box_info['Week Number'] = int(week.split('/week_')[1].split('.htm')[0])
+                #box_info['Week Number'] = int(week.split('/week_')[1].split('.htm')[0])
                 box_info['Box Score Link'] = '{0}{1}'.format(url_base,str(a.get('href')))
                 game_data.append(box_info)
     current_season += 1

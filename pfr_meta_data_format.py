@@ -12,11 +12,11 @@ import pandas as pd
 import numpy
 import math
 
-data_folder = 'file path to folder where all data will be held...no trailing slash'
+data_folder = '~/github/pfr_metadata_pull/data'
 
-df_raw = pd.read_csv('{0}/game_meta_data.csv')
-df_divisions = pd.read_csv(' file path to divisions.csv') ## this csv is uploaded to the github
-df_scraper_game = pd.read_csv(' file path reg_game_all.csv') ## this csv is uploaded to the github
+df_raw = pd.read_csv(f'{data_folder}/game_meta_data_weeks_fixed.csv')
+df_divisions = pd.read_csv('~/github/pfr_metadata_pull/divisions.csv') ## this csv is uploaded to the github
+df_scraper_game = pd.read_csv('~/github/pfr_metadata_pull/reg_game_all.csv') ## this csv is uploaded to the github
 
 pfr_to_pbp_dict = {
 
@@ -185,7 +185,7 @@ def row_format(row):
 
 
 df_new = df_format.apply(row_format,axis=1)
-df_new.to_csv('/Users/robertgreer/Documents/Coding/NFL/pro-football-reference/Data Files/game_meta_data_formatted.csv')
+df_new.to_csv(f'{data_folder}/game_meta_data_formatted.csv')
 
 meta_merge_headers = [
 
@@ -365,7 +365,7 @@ final_headers = [
     'home_starting_qb',
     'away_starting_qb_id',
     'home_starting_qb_id',
-    'away_won_toss',
+    #'away_won_toss',
     'winner_deferred',
     'referee',
     'umpire',

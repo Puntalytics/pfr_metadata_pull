@@ -8,10 +8,10 @@ from bs4 import BeautifulSoup
 import pandas as pd
 import numpy
 
-data_folder = 'file path to folder where all data will be held...no trailing slash'
+data_folder = '~/github/pfr_metadata_pull/data'
 
 ## Pull in URLs by turning data fram into list ##
-url_file = '{0}/game_links_1960_to_2018.csv'.format(data_folder)
+url_file = '{0}/game_links_2015_to_2017.csv'.format(data_folder)
 url_df = pd.read_csv(url_file)
 filtered_df = url_df[url_df['Season'] >= 1990] ## hasn't been tested before 1990, but would work in theory ##
 urls = filtered_df['Box Score Link'].tolist()
@@ -162,6 +162,7 @@ game_data_rows = []
 broken_box_list = []
 
 for url in urls:
+    print(f'working on {url}')
     time.sleep((.75 + random.random() * .5))
     try:
         game_data_points = {
@@ -262,7 +263,7 @@ for url in urls:
         game_data_points['Stadium Link'] = stadium_link
         game_data_points['Attendance'] = attendance
         game_data_points['Season'] = filtered_df[filtered_df['Box Score Link'] == url].iloc[0]['Season']
-        game_data_points['Week'] = filtered_df[filtered_df['Box Score Link'] == url].iloc[0]['Week Number']
+        game_data_points['Week'] = filtered_df[filtered_df['Box Score Link'] == url].iloc[0]['Week'] #' Number']
         game_data_points['Home Team'] = home_team
         game_data_points['Away Team'] = away_team
         game_data_points['Home Record'] = home_record
