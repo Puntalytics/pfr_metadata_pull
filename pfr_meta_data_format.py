@@ -12,11 +12,10 @@ import pandas as pd
 import numpy
 import math
 
-data_folder = '~/github/pfr_metadata_pull/data'
 
-df_raw = pd.read_csv(f'{data_folder}/game_meta_data_weeks_fixed.csv')
-df_divisions = pd.read_csv('~/github/pfr_metadata_pull/divisions.csv') ## this csv is uploaded to the github
-df_scraper_game = pd.read_csv('~/github/pfr_metadata_pull/reg_game_all.csv') ## this csv is uploaded to the github
+# Define all global variables first
+df_divisions = pd.read_csv('https://raw.githubusercontent.com/greerre/pfr_metadata_pull/master/divisions.csv') ## this csv is uploaded to the github; possible this link breaks at some point
+df_scraper_game = pd.read_csv('https://raw.githubusercontent.com/greerre/pfr_metadata_pull/master/reg_game_all.csv') ## this csv is uploaded to the github; possible this link breaks at some point
 
 pfr_to_pbp_dict = {
 
@@ -61,15 +60,6 @@ pfr_to_pbp_dict = {
 
 }
 
-df_format = df_raw
-df_format['Home Team (pfr)'] = df_format['Home Team']
-df_format['Away Team (pfr)'] = df_format['Away Team']
-df_format['Home Team'] = df_format['Home Team'].replace(pfr_to_pbp_dict)
-df_format['Away Team'] = df_format['Away Team'].replace(pfr_to_pbp_dict)
-
-df_divisions_home = df_divisions
-df_divisions_away = df_divisions
-
 home_rename_dict = {
     'Teams' : 'Home Team',
     'Conference' : 'Home Conference',
@@ -81,16 +71,179 @@ away_rename_dict = {
     'Division' : 'Away Division',
 }
 
-df_divisions_home = df_divisions_home.rename(columns=home_rename_dict)
-df_divisions_away = df_divisions_away.rename(columns=away_rename_dict)
+meta_merge_headers = [
 
-df_format = pd.merge(df_format,df_divisions_home,on=['Home Team'], how='left')
-df_format = pd.merge(df_format,df_divisions_away,on=['Away Team'], how='left')
-df_format = df_format.drop(columns=['Unnamed: 0', 'Unnamed: 0_y', 'Unnamed: 0_x'])
+    'Season',
+    'Week',
+    'Game Date',
+    'Game Day',
+    'Local Start Time',
+    'Game Length',
+    'Stadium',
+    'Stadium ID',
+    'Attendance',
+    'Roof',
+    'Surface',
+    'Temperature',
+    'Wind',
+    'Home Team',
+    'Away Team',
+    'Home Score',
+    'Away Score',
+    'Divisional Game',
+    'Home Spread',
+    'Total',
+    'Home Coach',
+    'Away Coach',
+    'Home Coach ID',
+    'Away Coach ID',
+    'Home Starting QB',
+    'Away Starting QB',
+    'Home Starting QB ID',
+    'Away Starting QB ID',
+    'Home Won Toss',
+    'Deferred',
+    'Referee',
+    'Umpire',
+    'Head Linesman / Down Judge',
+    'Line Judge',
+    'Back Judge',
+    'Side Judge',
+    'Field Judge'
 
-df_format['Divisional Game'] = numpy.where((df_format['Season'] >= 2002) & (df_format['Home Conference'] == df_format['Away Conference']) & (df_format['Home Division'] == df_format['Away Division']),1,0)
+]
 
+rename_merge_headers = {
 
+    'Season' : 'season',
+    'Week' : 'week',
+    'Game Date' : 'game_date',
+    'Game Day' : 'game_day',
+    'Local Start Time' : 'local_start_time',
+    'Game Length' : 'game_length',
+    'Stadium' : 'stadium',
+    'Stadium ID' : 'stadium_id',
+    'Attendance' : 'attendance',
+    'Roof' : 'roof',
+    'Surface' : 'surface',
+    'Temperature' : 'temperature',
+    'Wind' : 'wind',
+    'Home Team' : 'home_team',
+    'Away Team' : 'away_team',
+    'Home Score' : 'home_score_pfr',
+    'Away Score' : 'away_score_pfr',
+    'Divisional Game' : 'divisional_game',
+    'Home Spread' : 'home_spread',
+    'Total' : 'total',
+    'Home Coach' : 'home_coach',
+    'Away Coach' : 'away_coach',
+    'Home Coach ID' : 'home_coach_id',
+    'Away Coach ID' : 'away_coach_id',
+    'Home Starting QB' : 'home_starting_qb',
+    'Away Starting QB' : 'away_starting_qb',
+    'Home Starting QB ID' : 'home_starting_qb_id',
+    'Away Starting QB ID' : 'away_starting_qb_id',
+    'Home Won Toss' : 'home_won_toss',
+    'Deferred' : 'winner_deferred',
+    'Referee' : 'referee',
+    'Umpire' : 'umpire',
+    'Head Linesman / Down Judge' : 'down_judge',
+    'Line Judge' : 'line_judge',
+    'Back Judge' : 'back_judge',
+    'Side Judge' : 'side_judge',
+    'Field Judge' : 'field_judge',
+
+}
+
+pbp_team_standard_dict = {
+
+    'ARI' : 'ARI',
+    'ATL' : 'ATL',
+    'BAL' : 'BAL',
+    'BUF' : 'BUF',
+    'CAR' : 'CAR',
+    'CHI' : 'CHI',
+    'CIN' : 'CIN',
+    'CLE' : 'CLE',
+    'DAL' : 'DAL',
+    'DEN' : 'DEN',
+    'DET' : 'DET',
+    'GB'  : 'GB',
+    'HOU' : 'HOU',
+    'IND' : 'IND',
+    'JAC' : 'JAX',
+    'JAX' : 'JAX',
+    'KC'  : 'KC',
+    'LA'  : 'LAR',
+    'LAC' : 'LAC',
+    'MIA' : 'MIA',
+    'MIN' : 'MIN',
+    'NE'  : 'NE',
+    'NO'  : 'NO',
+    'NYG' : 'NYG',
+    'NYJ' : 'NYJ',
+    'OAK' : 'OAK',
+    'PHI' : 'PHI',
+    'PIT' : 'PIT',
+    'SD'  : 'LAC',
+    'SEA' : 'SEA',
+    'SF'  : 'SF',
+    'STL' : 'LAR',
+    'TB'  : 'TB',
+    'TEN' : 'TEN',
+    'WAS' : 'WAS',
+
+}
+
+final_headers = [
+
+    'type',
+    'game_id',
+    'state_of_game',
+    'game_url',
+    'away_team',
+    'home_team',
+    'week',
+    'season',
+    'home_score',
+    'away_score',
+    'game_date',
+    'game_day',
+    'local_start_time',
+    'game_length',
+    'stadium',
+    'stadium_id',
+    'attendance',
+    'roof',
+    'surface',
+    'temperature',
+    'wind',
+    'away_score_pfr',
+    'home_score_pfr',
+    'divisional_game',
+    'home_spread',
+    'total',
+    'away_coach',
+    'home_coach',
+    'away_coach_id',
+    'home_coach_id',
+    'away_starting_qb',
+    'home_starting_qb',
+    'away_starting_qb_id',
+    'home_starting_qb_id',
+    #'away_won_toss', # This threw an error for me (Dennis) so I removed it; sorry if you wanted this!
+    'winner_deferred',
+    'referee',
+    'umpire',
+    'down_judge',
+    'line_judge',
+    'back_judge',
+    'side_judge',
+    'field_judge'
+
+]
+
+# then helper functions:
 def url_to_id(url_id):
     id = numpy.nan
     try:
@@ -182,200 +335,70 @@ def row_format(row):
     row['Away Starting QB ID'] = url_to_id(row['Away Starting QB Link'])
     return row
 
+# Now the real, for-use function:
+def format_data(input_file, output_path):
+    '''
+    Input file should point to the csv created by week_name_stopgap
+    
+    Output path should point to the desired location of the metadata, and should NOT have a trailing slash.
+    '''
+    
+    data_folder = output_path
+    
+    df_raw = pd.read_csv(input_file)
+    
+    df_format = df_raw
+    df_format['Home Team (pfr)'] = df_format['Home Team']
+    df_format['Away Team (pfr)'] = df_format['Away Team']
+    df_format['Home Team'] = df_format['Home Team'].replace(pfr_to_pbp_dict)
+    df_format['Away Team'] = df_format['Away Team'].replace(pfr_to_pbp_dict)
+    
+    df_divisions_home = df_divisions
+    df_divisions_away = df_divisions
+    
+    
+    df_divisions_home = df_divisions_home.rename(columns=home_rename_dict)
+    df_divisions_away = df_divisions_away.rename(columns=away_rename_dict)
+    
+    df_format = pd.merge(df_format,df_divisions_home,on=['Home Team'], how='left')
+    df_format = pd.merge(df_format,df_divisions_away,on=['Away Team'], how='left')
+    df_format = df_format.drop(columns=['Unnamed: 0', 'Unnamed: 0_y', 'Unnamed: 0_x'])
+    
+    df_format['Divisional Game'] = numpy.where((df_format['Season'] >= 2002) & (df_format['Home Conference'] == df_format['Away Conference']) & (df_format['Home Division'] == df_format['Away Division']),1,0)
+    
+    
+    df_new = df_format.apply(row_format,axis=1)
+    df_new.to_csv(f'{data_folder}/game_meta_data_formatted.csv')
+    
+    
+    merge_df = df_new[meta_merge_headers]
+    
+    ## convert header formating to match nflscrapR for the join
+    ## note of caution...the original scraper swapped home and away team name and coaches
+    ## those were swapped back with the header rename dict below
+    ## the scraper has been fixed and the dict below has been swapped back, but neither tested
+    
+    
+    merge_df = merge_df.rename(columns=rename_merge_headers)
+    
+    ## prep scrapeR df ##
+    
+    
+    ## standardize team names across data sets ##
+    df_scraper_game['home_team'] = df_scraper_game['home_team'].replace(pbp_team_standard_dict)
+    df_scraper_game['away_team'] = df_scraper_game['away_team'].replace(pbp_team_standard_dict)
+    
+    ## create new_df ##
+    merged_df = pd.merge(merge_df,df_scraper_game,on=['season','week','home_team','away_team'],how='left')
+    
+    
+    
+    merged_df = merged_df[final_headers]
+    merged_df.to_csv('{0}/reg_game_w_meta.csv'.format(data_folder))
+    
+    return
 
-
-df_new = df_format.apply(row_format,axis=1)
-df_new.to_csv(f'{data_folder}/game_meta_data_formatted.csv')
-
-meta_merge_headers = [
-
-    'Season',
-    'Week',
-    'Game Date',
-    'Game Day',
-    'Local Start Time',
-    'Game Length',
-    'Stadium',
-    'Stadium ID',
-    'Attendance',
-    'Roof',
-    'Surface',
-    'Temperature',
-    'Wind',
-    'Home Team',
-    'Away Team',
-    'Home Score',
-    'Away Score',
-    'Divisional Game',
-    'Home Spread',
-    'Total',
-    'Home Coach',
-    'Away Coach',
-    'Home Coach ID',
-    'Away Coach ID',
-    'Home Starting QB',
-    'Away Starting QB',
-    'Home Starting QB ID',
-    'Away Starting QB ID',
-    'Home Won Toss',
-    'Deferred',
-    'Referee',
-    'Umpire',
-    'Head Linesman / Down Judge',
-    'Line Judge',
-    'Back Judge',
-    'Side Judge',
-    'Field Judge'
-
-]
-
-merge_df = df_new[meta_merge_headers]
-
-## convert header formating to match nflscrapR for the join
-## note of caution...the original scraper swapped home and away team name and coaches
-## those were swapped back with the header rename dict below
-## the scraper has been fixed and the dict below has been swapped back, but neither tested
-
-rename_merge_headers = {
-
-    'Season' : 'season',
-    'Week' : 'week',
-    'Game Date' : 'game_date',
-    'Game Day' : 'game_day',
-    'Local Start Time' : 'local_start_time',
-    'Game Length' : 'game_length',
-    'Stadium' : 'stadium',
-    'Stadium ID' : 'stadium_id',
-    'Attendance' : 'attendance',
-    'Roof' : 'roof',
-    'Surface' : 'surface',
-    'Temperature' : 'temperature',
-    'Wind' : 'wind',
-    'Home Team' : 'home_team',
-    'Away Team' : 'away_team',
-    'Home Score' : 'home_score_pfr',
-    'Away Score' : 'away_score_pfr',
-    'Divisional Game' : 'divisional_game',
-    'Home Spread' : 'home_spread',
-    'Total' : 'total',
-    'Home Coach' : 'home_coach',
-    'Away Coach' : 'away_coach',
-    'Home Coach ID' : 'home_coach_id',
-    'Away Coach ID' : 'away_coach_id',
-    'Home Starting QB' : 'home_starting_qb',
-    'Away Starting QB' : 'away_starting_qb',
-    'Home Starting QB ID' : 'home_starting_qb_id',
-    'Away Starting QB ID' : 'away_starting_qb_id',
-    'Home Won Toss' : 'home_won_toss',
-    'Deferred' : 'winner_deferred',
-    'Referee' : 'referee',
-    'Umpire' : 'umpire',
-    'Head Linesman / Down Judge' : 'down_judge',
-    'Line Judge' : 'line_judge',
-    'Back Judge' : 'back_judge',
-    'Side Judge' : 'side_judge',
-    'Field Judge' : 'field_judge',
-
-}
-
-merge_df = merge_df.rename(columns=rename_merge_headers)
-
-## prep scrapeR df ##
-pbp_team_standard_dict = {
-
-    'ARI' : 'ARI',
-    'ATL' : 'ATL',
-    'BAL' : 'BAL',
-    'BUF' : 'BUF',
-    'CAR' : 'CAR',
-    'CHI' : 'CHI',
-    'CIN' : 'CIN',
-    'CLE' : 'CLE',
-    'DAL' : 'DAL',
-    'DEN' : 'DEN',
-    'DET' : 'DET',
-    'GB'  : 'GB',
-    'HOU' : 'HOU',
-    'IND' : 'IND',
-    'JAC' : 'JAX',
-    'JAX' : 'JAX',
-    'KC'  : 'KC',
-    'LA'  : 'LAR',
-    'LAC' : 'LAC',
-    'MIA' : 'MIA',
-    'MIN' : 'MIN',
-    'NE'  : 'NE',
-    'NO'  : 'NO',
-    'NYG' : 'NYG',
-    'NYJ' : 'NYJ',
-    'OAK' : 'OAK',
-    'PHI' : 'PHI',
-    'PIT' : 'PIT',
-    'SD'  : 'LAC',
-    'SEA' : 'SEA',
-    'SF'  : 'SF',
-    'STL' : 'LAR',
-    'TB'  : 'TB',
-    'TEN' : 'TEN',
-    'WAS' : 'WAS',
-
-}
-
-
-## standardize team names across data sets ##
-df_scraper_game['home_team'] = df_scraper_game['home_team'].replace(pbp_team_standard_dict)
-df_scraper_game['away_team'] = df_scraper_game['away_team'].replace(pbp_team_standard_dict)
-
-## create new_df ##
-merged_df = pd.merge(merge_df,df_scraper_game,on=['season','week','home_team','away_team'],how='left')
-
-final_headers = [
-
-    'type',
-    'game_id',
-    'state_of_game',
-    'game_url',
-    'away_team',
-    'home_team',
-    'week',
-    'season',
-    'home_score',
-    'away_score',
-    'game_date',
-    'game_day',
-    'local_start_time',
-    'game_length',
-    'stadium',
-    'stadium_id',
-    'attendance',
-    'roof',
-    'surface',
-    'temperature',
-    'wind',
-    'away_score_pfr',
-    'home_score_pfr',
-    'divisional_game',
-    'home_spread',
-    'total',
-    'away_coach',
-    'home_coach',
-    'away_coach_id',
-    'home_coach_id',
-    'away_starting_qb',
-    'home_starting_qb',
-    'away_starting_qb_id',
-    'home_starting_qb_id',
-    #'away_won_toss',
-    'winner_deferred',
-    'referee',
-    'umpire',
-    'down_judge',
-    'line_judge',
-    'back_judge',
-    'side_judge',
-    'field_judge'
-
-]
-
-merged_df = merged_df[final_headers]
-merged_df.to_csv('{0}/reg_game_w_meta.csv'.format(data_folder))
+def main():
+    print('Script was run directly, but this doesn\'t do anything!')
+    
+if __name__ == '__main__': main()

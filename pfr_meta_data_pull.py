@@ -8,13 +8,6 @@ from bs4 import BeautifulSoup
 import pandas as pd
 import numpy
 
-data_folder = '~/github/pfr_metadata_pull/data'
-
-## Pull in URLs by turning data fram into list ##
-url_file = '{0}/game_links_2015_to_2017.csv'.format(data_folder)
-url_df = pd.read_csv(url_file)
-filtered_df = url_df[url_df['Season'] >= 1990] ## hasn't been tested before 1990, but would work in theory ##
-urls = filtered_df['Box Score Link'].tolist()
 
 
 ## helper data structures ##
@@ -26,7 +19,6 @@ month_translation = {
     'May' : 5,
     'Jun' : 6,
     'Jul' : 7,
-    'Jul' : 8,
     'Aug' : 8,
     'Sep' : 9,
     'Oct' : 10,
@@ -157,199 +149,228 @@ def get_officials_info(officials_div):
                 field_judge = official_name
     return referee, umpire, down_judge, line_judge, back_judge, side_judge, field_judge
 
+def pull_data_from_links(input_file, output_path, cutoff_year = 1990):
+    '''
+    url file should be that produced by the scrape_links function.
+    
+    Output path should point to the desired location of the metadata, and should NOT have a trailing slash.
 
-game_data_rows = []
-broken_box_list = []
+    The default cutoff year ensures that if the input url file contains data
+    from seasons prior to 1990, those will be omitted here due to fears of 
+    incompatibility;  feel free to change this parameter at your own risk.
+    
+    Note: This function might will take a while to run.  It takes ~2 seconds
+    per game, with ~250 games/season
+    '''
+    
+    game_data_rows = []
+    broken_box_list = []
+    
+    data_folder = output_path
 
-for url in urls:
-    print(f'working on {url}')
-    time.sleep((.75 + random.random() * .5))
-    try:
-        game_data_points = {
-            'Game Link' : None,
-            'Game Date' : None,
-            'Game Day' : None,
-            'Local Start Time' : None,
-            'Game Length' : None,
-            'Stadium' : None,
-            'Stadium Link' : None,
-            'Attendance' : None,
-            'Season': None,
-            'Week' : None,
-            'Home Team' : None,
-            'Away Team' : None,
-            'Home Record' : None,
-            'Away Record' : None,
-            'Home Score' : None,
-            'Away Score' : None,
-            'Home Coach' : None,
-            'Away Coach' : None,
-            'Home Coach Link' : None,
-            'Away Coach Link' : None,
-            'Home Starting QB' : None,
-            'Away Starting QB' : None,
-            'Home Starting QB Link' : None,
-            'Away Starting QB Link' : None,
-            'Won Toss' : None,
-            'Won Toss (OT)' : None,
-            'Roof' : None,
-            'Surface' : None,
-            'Weather' : None,
-            'Vegas Line' : None,
-            'Over/Under' : None,
-            'Referee' : None,
-            'Umpire' : None,
-            'Head Linesman / Down Judge' : None,
-            'Line Judge' : None,
-            'Back Judge' : None,
-            'Side Judge' : None,
-            'Field Judge' : None,
-        }
-        raw = requests.get(url)
-        parsed = BeautifulSoup(raw.content, 'html.parser')
-        score_board_divs = parsed.find('div', {'class' : 'scorebox'}).find_all('div', recursive=False)
-        home_div = score_board_divs[0]
-        away_div = score_board_divs[1]
-        meta_div = score_board_divs[2]
-        away_div_divs = away_div.find_all('div', recursive=False)
-        away_team = away_div_divs[0].find('a', {'itemprop' : 'name'}).text
+    ## Pull in URLs by turning data frame into list ##
+    url_df = pd.read_csv(input_file)
+    filtered_df = url_df[url_df['Season'] >= cutoff_year] ## hasn't been tested before 1990, but would work in theory ##
+    urls = filtered_df['Box Score Link'].tolist()
+
+    
+    for url in urls:
+        print(f'working on {url}')
+        time.sleep((.75 + random.random() * .5))
         try:
-            away_score = int(away_div_divs[1].find('div').text)
+            game_data_points = {
+                'Game Link' : None,
+                'Game Date' : None,
+                'Game Day' : None,
+                'Local Start Time' : None,
+                'Game Length' : None,
+                'Stadium' : None,
+                'Stadium Link' : None,
+                'Attendance' : None,
+                'Season': None,
+                'Week' : None,
+                'Home Team' : None,
+                'Away Team' : None,
+                'Home Record' : None,
+                'Away Record' : None,
+                'Home Score' : None,
+                'Away Score' : None,
+                'Home Coach' : None,
+                'Away Coach' : None,
+                'Home Coach Link' : None,
+                'Away Coach Link' : None,
+                'Home Starting QB' : None,
+                'Away Starting QB' : None,
+                'Home Starting QB Link' : None,
+                'Away Starting QB Link' : None,
+                'Won Toss' : None,
+                'Won Toss (OT)' : None,
+                'Roof' : None,
+                'Surface' : None,
+                'Weather' : None,
+                'Vegas Line' : None,
+                'Over/Under' : None,
+                'Referee' : None,
+                'Umpire' : None,
+                'Head Linesman / Down Judge' : None,
+                'Line Judge' : None,
+                'Back Judge' : None,
+                'Side Judge' : None,
+                'Field Judge' : None,
+            }
+            raw = requests.get(url)
+            parsed = BeautifulSoup(raw.content, 'html.parser')
+            score_board_divs = parsed.find('div', {'class' : 'scorebox'}).find_all('div', recursive=False)
+            home_div = score_board_divs[0]
+            away_div = score_board_divs[1]
+            meta_div = score_board_divs[2]
+            away_div_divs = away_div.find_all('div', recursive=False)
+            away_team = away_div_divs[0].find('a', {'itemprop' : 'name'}).text
+            try:
+                away_score = int(away_div_divs[1].find('div').text)
+            except:
+                away_score = int(away_div_divs[1].text)
+            away_record = away_div_divs[2].text
+            away_coach = away_div_divs[4].find('a').text
+            away_coach_link = away_div_divs[4].find('a').get('href')
+            home_div_divs = home_div.find_all('div', recursive=False)
+            home_team = home_div_divs[0].find('a', {'itemprop' : 'name'}).text
+            try:
+                home_score = int(home_div_divs[1].find('div').text)
+            except:
+                home_score = int(home_div_divs[1].text)
+            home_record = home_div_divs[2].text
+            home_coach = home_div_divs[4].find('a').text
+            home_coach_link = home_div_divs[4].find('a').get('href')
+            try: ## pfr's commenting messes up bs4s parsing, so the specific part has to get pulled as text and re-parsed ##
+                game_info_div_effed = str(parsed.find('div', {'id': 'all_game_info'}))
+                game_info_div = BeautifulSoup(game_info_div_effed.split('<!--')[1].split('-->')[0], 'html.parser')
+            except:
+                game_info_div = None
+            try:
+                home_starter_div_effed = str(parsed.find('div', {'id' : 'all_home_starters'}))
+                home_starter_div = BeautifulSoup(home_starter_div_effed.split('<!--')[1].split('-->')[0], 'html.parser')
+            except:
+                home_starter_div = None
+            try:
+                away_starter_div_effed = str(parsed.find('div', {'id' : 'all_vis_starters'}))
+                away_starter_div = BeautifulSoup(away_starter_div_effed.split('<!--')[1].split('-->')[0], 'html.parser')
+            except:
+                away_starter_div = None
+            try:
+                officials_div_effed = str(parsed.find('div', {'id' : 'all_officials'}))
+                officials_div = BeautifulSoup(officials_div_effed.split('<!--')[1].split('-->')[0], 'html.parser')
+            except:
+                officials_div = None
+            game_day, game_date, local_start_time, game_length, stadium, stadium_link, attendance = get_meta_data_points(meta_div)
+            won_toss, won_toss_ot, roof, surface, weather, vegas_line, over_under = get_game_info(game_info_div)
+            home_qb, home_qb_link = get_qb_info(home_starter_div)
+            away_qb, away_qb_link = get_qb_info(away_starter_div)
+            referee, umpire, down_judge, line_judge, back_judge, side_judge, field_judge = get_officials_info(officials_div)
+            game_data_points['Game Link'] = url
+            game_data_points['Game Date'] = game_date
+            game_data_points['Game Day'] = game_day
+            game_data_points['Local Start Time'] = local_start_time
+            game_data_points['Game Length'] = game_length
+            game_data_points['Stadium'] = stadium
+            game_data_points['Stadium Link'] = stadium_link
+            game_data_points['Attendance'] = attendance
+            game_data_points['Season'] = filtered_df[filtered_df['Box Score Link'] == url].iloc[0]['Season']
+            game_data_points['Week'] = filtered_df[filtered_df['Box Score Link'] == url].iloc[0]['Week'] #' Number']
+            game_data_points['Home Team'] = home_team
+            game_data_points['Away Team'] = away_team
+            game_data_points['Home Record'] = home_record
+            game_data_points['Away Record'] = away_record
+            game_data_points['Home Score'] = home_score
+            game_data_points['Away Score'] = away_score
+            game_data_points['Home Coach'] = home_coach
+            game_data_points['Away Coach'] = away_coach
+            game_data_points['Home Coach Link'] = home_coach_link
+            game_data_points['Away Coach Link'] = away_coach_link
+            game_data_points['Home Starting QB'] = home_qb
+            game_data_points['Away Starting QB'] = away_qb
+            game_data_points['Home Starting QB Link'] = home_qb_link
+            game_data_points['Away Starting QB Link'] = away_qb_link
+            game_data_points['Won Toss'] = won_toss
+            game_data_points['Won Toss (OT)'] = won_toss_ot
+            game_data_points['Roof'] = roof
+            game_data_points['Surface'] = surface
+            game_data_points['Weather'] = weather
+            game_data_points['Vegas Line'] = vegas_line
+            game_data_points['Over/Under'] = over_under
+            game_data_points['Referee'] = referee
+            game_data_points['Umpire'] = umpire
+            game_data_points['Head Linesman / Down Judge'] = down_judge
+            game_data_points['Line Judge'] = line_judge
+            game_data_points['Back Judge'] = back_judge
+            game_data_points['Side Judge'] = side_judge
+            game_data_points['Field Judge'] = field_judge
+            game_data_rows.append(game_data_points)
         except:
-            away_score = int(away_div_divs[1].text)
-        away_record = away_div_divs[2].text
-        away_coach = away_div_divs[4].find('a').text
-        away_coach_link = away_div_divs[4].find('a').get('href')
-        home_div_divs = home_div.find_all('div', recursive=False)
-        home_team = home_div_divs[0].find('a', {'itemprop' : 'name'}).text
-        try:
-            home_score = int(home_div_divs[1].find('div').text)
-        except:
-            home_score = int(home_div_divs[1].text)
-        home_record = home_div_divs[2].text
-        home_coach = home_div_divs[4].find('a').text
-        home_coach_link = home_div_divs[4].find('a').get('href')
-        try: ## pfr's commenting messes up bs4s parsing, so the specific part has to get pulled as text and re-parsed ##
-            game_info_div_effed = str(parsed.find('div', {'id': 'all_game_info'}))
-            game_info_div = BeautifulSoup(game_info_div_effed.split('<!--')[1].split('-->')[0], 'html.parser')
-        except:
-            game_info_div = None
-        try:
-            home_starter_div_effed = str(parsed.find('div', {'id' : 'all_home_starters'}))
-            home_starter_div = BeautifulSoup(home_starter_div_effed.split('<!--')[1].split('-->')[0], 'html.parser')
-        except:
-            home_starter_div = None
-        try:
-            away_starter_div_effed = str(parsed.find('div', {'id' : 'all_vis_starters'}))
-            away_starter_div = BeautifulSoup(away_starter_div_effed.split('<!--')[1].split('-->')[0], 'html.parser')
-        except:
-            away_starter_div = None
-        try:
-            officials_div_effed = str(parsed.find('div', {'id' : 'all_officials'}))
-            officials_div = BeautifulSoup(officials_div_effed.split('<!--')[1].split('-->')[0], 'html.parser')
-        except:
-            officials_div = None
-        game_day, game_date, local_start_time, game_length, stadium, stadium_link, attendance = get_meta_data_points(meta_div)
-        won_toss, won_toss_ot, roof, surface, weather, vegas_line, over_under = get_game_info(game_info_div)
-        home_qb, home_qb_link = get_qb_info(home_starter_div)
-        away_qb, away_qb_link = get_qb_info(away_starter_div)
-        referee, umpire, down_judge, line_judge, back_judge, side_judge, field_judge = get_officials_info(officials_div)
-        game_data_points['Game Link'] = url
-        game_data_points['Game Date'] = game_date
-        game_data_points['Game Day'] = game_day
-        game_data_points['Local Start Time'] = local_start_time
-        game_data_points['Game Length'] = game_length
-        game_data_points['Stadium'] = stadium
-        game_data_points['Stadium Link'] = stadium_link
-        game_data_points['Attendance'] = attendance
-        game_data_points['Season'] = filtered_df[filtered_df['Box Score Link'] == url].iloc[0]['Season']
-        game_data_points['Week'] = filtered_df[filtered_df['Box Score Link'] == url].iloc[0]['Week'] #' Number']
-        game_data_points['Home Team'] = home_team
-        game_data_points['Away Team'] = away_team
-        game_data_points['Home Record'] = home_record
-        game_data_points['Away Record'] = away_record
-        game_data_points['Home Score'] = home_score
-        game_data_points['Away Score'] = away_score
-        game_data_points['Home Coach'] = home_coach
-        game_data_points['Away Coach'] = away_coach
-        game_data_points['Home Coach Link'] = home_coach_link
-        game_data_points['Away Coach Link'] = away_coach_link
-        game_data_points['Home Starting QB'] = home_qb
-        game_data_points['Away Starting QB'] = away_qb
-        game_data_points['Home Starting QB Link'] = home_qb_link
-        game_data_points['Away Starting QB Link'] = away_qb_link
-        game_data_points['Won Toss'] = won_toss
-        game_data_points['Won Toss (OT)'] = won_toss_ot
-        game_data_points['Roof'] = roof
-        game_data_points['Surface'] = surface
-        game_data_points['Weather'] = weather
-        game_data_points['Vegas Line'] = vegas_line
-        game_data_points['Over/Under'] = over_under
-        game_data_points['Referee'] = referee
-        game_data_points['Umpire'] = umpire
-        game_data_points['Head Linesman / Down Judge'] = down_judge
-        game_data_points['Line Judge'] = line_judge
-        game_data_points['Back Judge'] = back_judge
-        game_data_points['Side Judge'] = side_judge
-        game_data_points['Field Judge'] = field_judge
-        game_data_rows.append(game_data_points)
-    except:
-        broken_row = {
-            'Season' : None,
-            'Week' : None,
-            'URL' : None,
-        }
-        broken_row['Season'] = filtered_df[filtered_df['Box Score Link'] == url].iloc[0]['Season']
-        broken_row['Week'] = filtered_df[filtered_df['Box Score Link'] == url].iloc[0]['Week']
-        broken_row['URL'] = url
-        broken_box_list.append(broken_row)
-        print('ROW BROKEN {0}'.format(broken_row))
+            broken_row = {
+                'Season' : None,
+                'Week' : None,
+                'URL' : None,
+            }
+            broken_row['Season'] = filtered_df[filtered_df['Box Score Link'] == url].iloc[0]['Season']
+            broken_row['Week'] = filtered_df[filtered_df['Box Score Link'] == url].iloc[0]['Week']
+            broken_row['URL'] = url
+            broken_box_list.append(broken_row)
+            print('ROW BROKEN {0}'.format(broken_row))
+    
+    
+    df = pd.DataFrame(game_data_rows)
+    df_two = pd.DataFrame(broken_box_list)
+    
+    
+    headers = [
+        'Game Link',
+        'Game Date',
+        'Game Day',
+        'Local Start Time',
+        'Game Length',
+        'Stadium',
+        'Stadium Link',
+        'Attendance',
+        'Season',
+        'Week',
+        'Home Team',
+        'Away Team',
+        'Home Record',
+        'Away Record',
+        'Home Score',
+        'Away Score',
+        'Home Coach',
+        'Away Coach',
+        'Home Coach Link',
+        'Away Coach Link',
+        'Home Starting QB',
+        'Away Starting QB',
+        'Home Starting QB Link',
+        'Away Starting QB Link',
+        'Won Toss',
+        'Won Toss (OT)',
+        'Roof',
+        'Surface',
+        'Weather',
+        'Vegas Line',
+        'Over/Under',
+        'Referee',
+        'Umpire',
+        'Head Linesman / Down Judge',
+        'Line Judge',
+        'Back Judge',
+        'Side Judge',
+        'Field Judge'
+    ]
+    
+    df = df[headers]
+    df.to_csv('{0}/game_meta_data.csv'.format(data_folder))
 
+    return
 
-df = pd.DataFrame(game_data_rows)
-df_two = pd.DataFrame(broken_box_list)
+def main():
+    print('Script was run directly, but this doesn\'t do anything!')
+    
+if __name__ == '__main__': main()
 
-
-headers = [
-    'Game Link',
-    'Game Date',
-    'Game Day',
-    'Local Start Time',
-    'Game Length',
-    'Stadium',
-    'Stadium Link',
-    'Attendance',
-    'Season',
-    'Week',
-    'Home Team',
-    'Away Team',
-    'Home Record',
-    'Away Record',
-    'Home Score',
-    'Away Score',
-    'Home Coach',
-    'Away Coach',
-    'Home Coach Link',
-    'Away Coach Link',
-    'Home Starting QB',
-    'Away Starting QB',
-    'Home Starting QB Link',
-    'Away Starting QB Link',
-    'Won Toss',
-    'Won Toss (OT)',
-    'Roof',
-    'Surface',
-    'Weather',
-    'Vegas Line',
-    'Over/Under',
-    'Referee',
-    'Umpire',
-    'Head Linesman / Down Judge',
-    'Line Judge',
-    'Back Judge',
-    'Side Judge',
-    'Field Judge'
-]
-
-df = df[headers]
-df.to_csv('{0}/game_meta_data.csv'.format(data_folder))
