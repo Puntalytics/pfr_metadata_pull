@@ -20,7 +20,7 @@ Say you have a file "pbp.csv" that spans some range of seasons, and you just cre
 import pandas as pd
 pbp = pd.read_csv('pbp.csv')
 meta = pd.read_csv('game_meta_data_ready_to_merge.csv')
-pbp_meta = pd.merge(pbp, meta, on=['season','week','home_team','away_team'], how='outer')
+pbp_meta = pd.merge(pbp, meta, on=['season','week','home_team','away_team'], how='left')
 ```
 Or maybe you do this part in R:
 ```R
