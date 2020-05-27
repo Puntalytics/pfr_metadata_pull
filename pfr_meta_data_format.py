@@ -380,21 +380,21 @@ def format_data(input_file, output_path):
     
     
     merge_df = merge_df.rename(columns=rename_merge_headers)
-    
+    merge_df.to_csv(f'{data_folder}/game_meta_data_ready_to_merge.csv')
     ## prep scrapeR df ##
     
     
-    ## standardize team names across data sets ##
-    df_scraper_game['home_team'] = df_scraper_game['home_team'].replace(pbp_team_standard_dict)
-    df_scraper_game['away_team'] = df_scraper_game['away_team'].replace(pbp_team_standard_dict)
+    # ## standardize team names across data sets ##
+    # df_scraper_game['home_team'] = df_scraper_game['home_team'].replace(pbp_team_standard_dict)
+    # df_scraper_game['away_team'] = df_scraper_game['away_team'].replace(pbp_team_standard_dict)
     
-    ## create new_df ##
-    merged_df = pd.merge(merge_df,df_scraper_game,on=['season','week','home_team','away_team'],how='left')
+    # ## create new_df ##
+    # merged_df = pd.merge(merge_df,df_scraper_game,on=['season','week','home_team','away_team'],how='left')
     
     
     
-    merged_df = merged_df[final_headers]
-    merged_df.to_csv('{0}/reg_game_w_meta.csv'.format(data_folder))
+    # merged_df = merged_df[final_headers]
+    # merged_df.to_csv('{0}/reg_game_w_meta.csv'.format(data_folder))
     
     return
 

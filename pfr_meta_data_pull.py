@@ -159,7 +159,7 @@ def pull_data_from_links(input_file, output_path, cutoff_year = 1990):
     from seasons prior to 1990, those will be omitted here due to fears of 
     incompatibility;  feel free to change this parameter at your own risk.
     
-    Note: This function might will take a while to run.  It takes ~2 seconds
+    Note: This function might take a little while to run.  It takes ~2 seconds
     per game, with ~250 games/season
     '''
     
