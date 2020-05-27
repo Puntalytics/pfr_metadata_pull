@@ -8,12 +8,27 @@ All of your favorite pfr_metadata_pull code, now in package form!  Usage is a si
 ```python
 import pfr_metadata_pull as meta
 
-meta.scrape_links(start_year, end_year, output_path)  # creates input_file1
-meta.pull_data_from_links(input_file1, output_path)  # creates input_file2
-meta.fix_weeks(input_file2, output_path)  # creates input_file3
-meta.format_data(input_file3, output_path)  # creates your final file of interest, with metadata for games in the desired range
+meta.scrape_links(start_year, end_year, output_path) # creates a file "game_links_startyear_to_endyear.csv" in the 'output_path' directory
+meta.pull_data_from_links("game_links_startyear_to_endyear.csv", output_path) # creates a file "game_meta_data.csv" in the 'output_path' directory
+meta.fix_weeks("game_meta_data.csv", output_path)  # creates a file "game_meta_data_weeks_fixed.csv" in the 'output_path' directory
+meta.format_data("game_meta_data_weeks_fixed.csv", output_path)  # creates two files in the 'output_path' directory
 ```
-The scrape_links, pull_data_from_links, and format_data methods correlate with the functions of the scripts referenced below, while fix_weeks is a stopgap bug fix that I couldn't quite figure out.
+The final format_data function makes two files - one, "game_meta_data_formatted.csv", is a nice pretty version of the metadata.  
+The other file, __"game_meta_data_ready_to_merge.csv"__ is what you'll need to add metadata to an existing play-by-play file.  
+Say you have a file "pbp.csv" that spans some range of seasons, and you just created "game_meta_data_ready_to_merge.csv" for that same range of seasons.  Now you can do:
+```python
+import pandas as pd
+pbp = pd.read_csv('pbp.csv')
+meta = pd.read_csv('game_meta_data_ready_to_merge.csv')
+pbp_meta = pd.merge(pbp, meta, on=['season','week','home_team','away_team'], how='outer')
+```
+Or maybe you do this part in R:
+```R
+library(tidyverse)
+pbp <- read_csv('pbp.csv')
+meta <- read_csv('game_meta_data_ready_to_merge.csv')
+pbp_meta <- left_join(pbp, meta, by = c("season", "week", "home_team", "away_team"))
+```
 
 These changes made by [Dennis Brookner](https://github.com/dennisbrookner); direct concerns to me, or to [Puntalytics](https://twitter.com/ThePuntRunts) on twitter.
 
